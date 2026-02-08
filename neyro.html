@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нейросети в финансовых процессах</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-dark: #0f172a;
+            --secondary-dark: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --text-light: #f8fafc;
+            --text-muted: #cbd5e1;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-radius: 24px;
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: 
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, var(--primary-dark) 0%, #1a1f3a 100%);
+            color: var(--text-light);
+            line-height: 1.7;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(600px at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 100%),
+                radial-gradient(600px at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 100%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Частицы */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            opacity: 0.3;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(100px, 100px) rotate(90deg); }
+            50% { transform: translate(0, 200px) rotate(180deg); }
+            75% { transform: translate(-100px, 100px) rotate(270deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Градиентный заголовок с неон-эффектом */
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--border-radius);
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.1) 0%, 
+                rgba(139, 92, 246, 0.1) 50%, 
+                rgba(6, 182, 212, 0.1) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.03) 50%, 
+                transparent 100%);
+            animation: shimmer 8s infinite linear;
+            z-index: 0;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .title-main {
+            font-size: 4.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, 
+                var(--accent-cyan), 
+                var(--accent-blue), 
+                var(--accent-purple),
+                var(--accent-pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            line-height: 1.1;
+            position: relative;
+            text-shadow: 
+                0 0 30px rgba(6, 182, 212, 0.3),
+                0 0 60px rgba(59, 130, 246, 0.2);
+            animation: gradient-shift 6s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.4rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 30px;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, 
+                var(--accent-blue), 
+                var(--accent-purple));
+            color: white;
+            padding: 14px 32px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 20px;
+            box-shadow: 
+                0 10px 30px rgba(59, 130, 246, 0.4),
+                0 0 20px rgba(139, 92, 246, 0.3);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent);
+            transition: left 0.7s ease;
+        }
+
+        .badge:hover::before {
+            left: 100%;
+        }
+
+        .badge:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 
+                0 15px 40px rgba(59, 130, 246, 0.5),
+                0 0 30px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Сетка карточек с 3D эффектом */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-bottom: 80px;
+            perspective: 1000px;
+        }
+
+        /* Карточки с улучшенной анимацией */
+        .card {
+            background: var(--glass-bg);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            transition: var(--transition);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transform: perspective(1000px) rotateY(0deg) rotateX(0deg);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.1), 
+                rgba(139, 92, 246, 0.1));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: -1;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:hover {
+            transform: 
+                perspective(1000px) 
+                rotateY(5deg) 
+                rotateX(-2deg) 
+                translateY(-20px);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(59, 130, 246, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 5px 15px rgba(59, 130, 246, 0.3));
+        }
+
+        .card-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: var(--text-light);
+            position: relative;
+            display: inline-block;
+        }
+
+        .card-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .card:hover .card-title::after {
+            width: 100%;
+        }
+
+        .card-content {
+            color: var(--text-muted);
+            flex-grow: 1;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .card-highlight {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+            padding: 2px 4px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .card-highlight::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -2px;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+            opacity: 0.5;
+        }
+
+        /* Кейсы */
+        .cases-section {
+            margin-bottom: 80px;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 50px;
+            position: relative;
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 10px 20px rgba(6, 182, 212, 0.2);
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -15px;
+            width: 80px;
+            height: 5px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 3px;
+            animation: width-pulse 2s infinite;
+        }
+
+        @keyframes width-pulse {
+            0%, 100% { width: 80px; }
+            50% { width: 120px; }
+        }
+
+        .cases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .cases-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .case-card {
+            background: linear-gradient(145deg, 
+                rgba(30, 41, 59, 0.9), 
+                rgba(15, 23, 42, 0.9));
+            border-radius: var(--border-radius);
+            padding: 35px;
+            border-left: 8px solid var(--accent-blue);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .case-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                transparent 30%, 
+                rgba(59, 130, 246, 0.1) 50%, 
+                transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .case-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .case-card:hover {
+            transform: 
+                translateX(10px) 
+                translateY(-5px);
+            border-left-color: var(--accent-cyan);
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.3),
+                0 0 30px rgba(59, 130, 246, 0.2);
+        }
+
+        .case-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 1;
+            font-weight: 800;
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .case-number::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+                transparent 30%, 
+                rgba(255, 255, 255, 0.3) 50%, 
+                transparent 70%);
+            animation: shine 3s infinite linear;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .case-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        /* Теги инструментов */
+        .tools-section {
+            margin-bottom: 80px;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .tag {
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid rgba(59, 130, 246, 0.4);
+            color: var(--accent-cyan);
+            padding: 16px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tag::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.2), 
+                rgba(6, 182, 212, 0.2));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .tag:hover {
+            background: rgba(59, 130, 246, 0.3);
+            transform: 
+                scale(1.1) 
+                translateY(-5px);
+            border-color: var(--accent-cyan);
+            box-shadow: 
+                0 15px 30px rgba(59, 130, 246, 0.3),
+                0 0 20px rgba(6, 182, 212, 0.2);
+            color: white;
+        }
+
+        .tag:hover::before {
+            opacity: 1;
+        }
+
+        .tag i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .tag:hover i {
+            transform: scale(1.3) rotate(10deg);
+        }
+
+        /* Цитата-вывод */
+        .quote-card {
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.15), 
+                rgba(6, 182, 212, 0.15),
+                rgba(139, 92, 246, 0.1));
+            border-radius: var(--border-radius);
+            padding: 60px;
+            margin-top: 60px;
+            border-left: 8px solid var(--accent-cyan);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .quote-card::before {
+            content: '""';
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            font-size: 12rem;
+            font-family: serif;
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.1), 
+                rgba(139, 92, 246, 0.1));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            opacity: 0.3;
+            line-height: 1;
+        }
+
+        .quote-text {
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.4;
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(135deg, 
+                var(--text-light) 0%, 
+                var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 10px 20px rgba(6, 182, 212, 0.2);
+        }
+
+        .quote-author {
+            margin-top: 30px;
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quote-author::before {
+            content: '';
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-cyan), transparent);
+        }
+
+        /* Индикатор прокрутки */
+        .scroll-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                var(--accent-cyan), 
+                var(--accent-blue), 
+                var(--accent-purple));
+            transform-origin: 0%;
+            z-index: 1000;
+            opacity: 0.9;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .header {
+                padding: 40px 20px;
+                margin-bottom: 50px;
+            }
+            
+            .title-main {
+                font-size: 2.8rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            
+            .card {
+                padding: 30px;
+            }
+            
+            .quote-card {
+                padding: 40px 30px;
+            }
+            
+            .quote-text {
+                font-size: 1.6rem;
+            }
+            
+            .cases-grid {
+                gap: 20px;
+            }
+            
+            .tags-container {
+                gap: 15px;
+            }
+            
+            .tag {
+                padding: 14px 24px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title-main {
+                font-size: 2.2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 25px;
+            }
+            
+            .quote-text {
+                font-size: 1.4rem;
+            }
+        }
+
+        /* Продвинутые анимации */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+                filter: blur(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @keyframes floatCard {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+        .delay-4 { animation-delay: 0.8s; }
+
+        .floating {
+            animation: floatCard 6s ease-in-out infinite;
+        }
+
+        /* Эффект свечения */
+        .glow {
+            position: relative;
+        }
+
+        .glow::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: inherit;
+            filter: blur(20px);
+            opacity: 0.5;
+            z-index: -1;
+            border-radius: inherit;
+        }
+    </style>
+</head>
+<body>
+    <!-- Частицы -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Индикатор прокрутки -->
+    <div class="scroll-indicator" id="scrollIndicator"></div>
+
+    <div class="container">
+        <!-- Заголовок -->
+        <header class="header fade-in">
+            <h1 class="title-main glow">Использование нейросетей в финансовых процессах</h1>
+            <p class="subtitle">Практический кейс автоматизации финансовой рутины с помощью ИИ</p>
+            <div class="badge">
+                <i class="fas fa-rocket"></i>
+                <span>Кейс внедрения</span>
+            </div>
+        </header>
+
+        <!-- Основная информация в карточках -->
+        <div class="grid">
+            <div class="card fade-in floating">
+                <div class="card-icon">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <h2 class="card-title">Зачем</h2>
+                <div class="card-content">
+                    <p>Сократить финансовую рутину, зафиксировать логику обработки данных и показать, как нейросеть может использоваться как <span class="card-highlight">прикладной инструмент</span> в ежедневной работе финансиста.</p>
+                </div>
+            </div>
+
+            <div class="card fade-in delay-1 floating" style="animation-delay: 0.3s">
+                <div class="card-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h2 class="card-title">Подход</h2>
+                <div class="card-content">
+                    <p><span class="card-highlight">Одна задача — один промт — один скрипт.</span> Нейросеть используется для генерации скриптов Google Sheets (Apps Script) на основе чётко описанной финансовой логики.</p>
+                </div>
+            </div>
+
+            <div class="card fade-in delay-2 floating" style="animation-delay: 0.6s">
+                <div class="card-icon">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <h2 class="card-title">Ключевая идея</h2>
+                <div class="card-content">
+                    <p>Если есть задача, но нет готового решения — нейросеть помогает предложить варианты, после чего решение развивается итеративно и адаптируется под реальные бизнес-правила.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Решённые задачи -->
+        <section class="cases-section fade-in delay-1">
+            <h2 class="section-title">Решённые задачи</h2>
+            <div class="cases-grid">
+                <div class="case-card fade-in">
+                    <div class="case-number">1</div>
+                    <h3 class="case-title">Автоматическое разнесение банковской выписки</h3>
+                    <p class="card-content">По статьям доходов и расходов с точной классификацией операций</p>
+                </div>
+                <div class="case-card fade-in delay-1">
+                    <div class="case-number">2</div>
+                    <h3 class="case-title">Распределение данных по филиалам</h3>
+                    <p class="card-content">С расчётного счёта и кассы по городам с автоматической привязкой</p>
+                </div>
+                <div class="case-card fade-in delay-2">
+                    <div class="case-number">3</div>
+                    <h3 class="case-title">Консолидация данных</h3>
+                    <p class="card-content">Сбор выборочных данных с нескольких листов в единую итоговую таблицу</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Инструменты -->
+        <section class="tools-section fade-in delay-2">
+            <h2 class="section-title">Как повторить у себя</h2>
+            <div class="tags-container">
+                <div class="tag fade-in">
+                    <i class="fas fa-list-check"></i>
+                    <span>1. Выделить рутинный процесс</span>
+                </div>
+                <div class="tag fade-in delay-1">
+                    <i class="fas fa-file-alt"></i>
+                    <span>2. Описать данные, правила и результат</span>
+                </div>
+                <div class="tag fade-in delay-2">
+                    <i class="fas fa-keyboard"></i>
+                    <span>3. Написать промт под одну задачу</span>
+                </div>
+                <div class="tag fade-in delay-3">
+                    <i class="fas fa-code"></i>
+                    <span>4. Сгенерировать и протестировать скрипт</span>
+                </div>
+                <div class="tag fade-in delay-4">
+                    <i class="fas fa-repeat"></i>
+                    <span>5. Зафиксировать и использовать логику</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Вывод -->
+        <div class="quote-card fade-in delay-3">
+            <p class="quote-text">Нейросеть не заменяет финансиста, а ускоряет превращение финансовой экспертизы в воспроизводимый и масштабируемый процесс.</p>
+            <div class="quote-author">— Итог внедрения</div>
+        </div>
+    </div>
+
+    <script>
+        // Создание частиц
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Случайные параметры
+                const size = Math.random() * 8 + 2;
+                const color = Math.random() > 0.5 ? 'var(--accent-cyan)' : 'var(--accent-purple)';
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const delay = Math.random() * 20;
+                const duration = Math.random() * 10 + 20;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.background = color;
+                particle.style.left = `${x}%`;
+                particle.style.top = `${y}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Индикатор прокрутки
+        function updateScrollIndicator() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('scrollIndicator').style.transform = `scaleX(${scrolled / 100})`;
+        }
+
+        // Параллакс эффект для карточек
+        function handleMouseMove(e) {
+            const cards = document.querySelectorAll('.card');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+            
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const cardCenterX = rect.left + rect.width / 2;
+                const cardCenterY = rect.top + rect.height / 2;
+                
+                const deltaX = (e.clientX - cardCenterX) / window.innerWidth;
+                const deltaY = (e.clientY - cardCenterY) / window.innerHeight;
+                
+                card.style.transform = `
+                    perspective(1000px)
+                    rotateY(${deltaX * 5}deg)
+                    rotateX(${-deltaY * 5}deg)
+                    translateY(-10px)
+                `;
+            });
+        }
+
+        // Анимация появления при скролле
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0) scale(1)';
+                    entry.target.style.filter = 'blur(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            // Создаем частицы
+            createParticles();
+            
+            // Наблюдаем за всеми элементами
+            document.querySelectorAll('.fade-in').forEach(el => {
+                observer.observe(el);
+            });
+            
+            // Параллакс на карточках
+            document.addEventListener('mousemove', handleMouseMove);
+            
+            // Обновляем индикатор прокрутки
+            window.addEventListener('scroll', updateScrollIndicator);
+            
+            // Анимация тегов при клике
+            document.querySelectorAll('.tag').forEach(tag => {
+                tag.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1.1) translateY(-5px)';
+                    }, 150);
+                });
+            });
+            
+            // Анимация появления при загрузке
+            setTimeout(() => {
+                document.querySelectorAll('.fade-in').forEach(el => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(40px) scale(0.95)';
+                    el.style.filter = 'blur(10px)';
+                });
+            }, 100);
+        });
+
+        // Эффект параллакса для фона
+        window.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+            
+            document.body.style.backgroundPosition = `
+                ${mouseX * 50}px ${mouseY * 50}px,
+                ${100 - mouseX * 50}px ${100 - mouseY * 50}px,
+                ${50 + mouseX * 100}px ${50 + mouseY * 100}px
+            `;
+        });
+    </script>
+</body>
+</html>
